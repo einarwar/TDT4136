@@ -11,43 +11,53 @@ def get_content_from_file(filename):
 
 #Nodeclass with properties
 class Node:
-    def __init__(self, x, y):
+    def __init__(self, x, y, cost, terrain):
         self.parent = None
         self.x = x
         self.y = y
         self.g = 0
         self.h = 0
         self.f = 0
+        self.cost = cost
+        self.terrain = terrain
         
-#Change this one 
 #Makes list of nodes from the textfile import        
 def generate_list_of_nodes(board):
     nodes = []
-    n0 = None
     for (i, row) in enumerate(board):
-        for (j, cell) in enumerate(row):
-            isWall = False
-            if cell == '#':
-                isWall = True
-            n = Node(i,j, isWall)
-            if cell == 'A':
-                start = Node(i,j, isWall=False)
-            if cell == 'B':
-                end = Node(i,j, isWall=False)
-            nodes.append(n)
-    return nodes, start, end
+        for (j, node) in enumerate(row):
+            if node == 'w':
+                cost = 100
+                terrain = 'Water'
+            elif node == 'm':
+                cost = 50
+                terrain = 'Mountains'
+            elif node == 'f':
+                cost = 10
+                terrain = 'Forest'
+            elif node == 'g':
+                cost = 5
+                terrain = 'Grasslands'
+            elif node == 'r':
+                cost = 1
+                terrain = 'Roads'
+            n = Node(i,j, cost, terrain)
+            nodes.append(n)                
+    return nodes
 
 #Algorithm class
 class Astar:
-    def __init__(self, board, rows, cols):
+    def __init__(self, board, rows, cols, start_loc, end_loc):
         self.open = []
         self.closed = set()
-        (self.nodes, self.start, self.end) = generate_list_of_nodes(board)
+        self.nodes = generate_list_of_nodes(board)
+        self.start = Node(start_loc[0], start_loc[1], cost=0, terrain='Start')
+        self.end = Node(end_loc[0], end_loc[1], cost=0, terrain='End' )
         self.rows = rows
         self.cols = cols
 
     #Calculates manhattan distance from node to end
-    def calc_costs(self, node):
+    def calc_h(self, node):
         return 10 * np.abs(node.x - self.end.x) + np.abs(node.y - self.end.y)
     
     #Returns a node based on x,y position
@@ -75,8 +85,8 @@ class Astar:
    #Change this
     #Updates the costs and parent of an adjancent node 
     def update_node(self, adj, node):
-        adj.g = node.g + 10
-        adj.h = self.calc_costs(adj)
+        adj.g = node.g + 10 + adj.cost #Not sure about this one
+        adj.h = self.calc_h(adj)
         adj.parent = node
         adj.f = adj.g + adj.h
         
@@ -84,10 +94,13 @@ class Astar:
     def get_path(self):
         path_nodes = []
         node = self.end
+        total_cost = node.cost
         while node.parent is not self.start:
             node = node.parent
+            print 'Cost to walk on this {} is {}'.format(node.terrain, node.cost)
+            total_cost += node.cost
             path_nodes.append((node.x, node.y))
-        return path_nodes
+        return path_nodes, total_cost
     
     #Change tHis one
     #Pretty basic function that prints the solved
@@ -96,9 +109,7 @@ class Astar:
         board = ''
         i = 0
         for node in self.nodes:
-            if node.isWall:
-                line+='#'
-            elif (node.x, node.y) == (self.end.x, self.end.y):
+            if (node.x, node.y) == (self.end.x, self.end.y):
                 line += 'E'
             elif (node.x, node.y) in (path_nodes):
                 line += 'o'
@@ -107,13 +118,18 @@ class Astar:
             else:
                 line += '-'
             i+=1
-            if i == 20:
+            if i == self.cols:
                 i = 0
                 line += '\n'
                 board += line
         board += '_' * self.cols + '\n'
         print board
         
+    def numpy_imshow_solved(self, path_nodes):
+        for node in self.nodes:
+            pass
+        return 0    
+    
     #Change some in this?
     def go(self):
         #Append start fcost and startnode to open list
@@ -128,18 +144,20 @@ class Astar:
             if (current.x,current.y) == (self.end.x, self.end.y):
                 print 'Found a path, exiting'
                 self.end.parent = current
-                self.print_path(self.get_path())
+                path, total_cost = self.get_path()
+                self.print_solved_path(path)
+                print 'Total Cost is {}'.format(total_cost)
                 break
             #Check the adjacent nodes to the one we are working on
             adj_nodes = self.get_adjacent_nodes(current)
             for adj_node in adj_nodes:
                 self.open.sort(reverse=True)
                 #If it is not unpassable, and not yet processed
-                if not adj_node.isWall and adj_node not in self.closed:
+                if adj_node not in self.closed:
 
                     #If adjacent node is in open, and its g-cost is higher than itself + 10 we need to update its value, because we found a shorter path to it now.
                     if (adj_node.f, adj_node) in self.open:
-                        if adj_node.g > current.g + 10:
+                        if adj_node.g > current.g + 10 + adj_node.cost:
                             self.update_node(adj_node, current)
                     #If adjacent node is not in open, we update its values, and add it to open
                     else:
@@ -149,7 +167,7 @@ class Astar:
 #Create Astar object and solve board
 def shortest_path(filename):
     content, rows, cols = get_content_from_file(filename)
-    astar = Astar(content, rows, cols)
+    astar = Astar(content, rows, cols, (0,0), (6,6))
     astar.go()
     
 if __name__ == '__main__':
