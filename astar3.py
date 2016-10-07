@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from collections import deque
 
 #Function that imports a textfile and finds dimensions
 def get_content_from_file(filename):
@@ -47,15 +48,19 @@ def generate_list_of_nodes(board):
 
 #Algorithm class
 class Astar:
-    def __init__(self, board, rows, cols, start_loc, end_loc, filename):
-        self.open = []
-        self.closed = set()
+    def __init__(self, board, rows, cols, start_loc, end_loc, filename, alg='bfs'):
         self.nodes = generate_list_of_nodes(board)
         self.start = Node(start_loc[0], start_loc[1], cost=0, terrain='Start')
         self.end = Node(end_loc[0], end_loc[1], cost=0, terrain='End' )
         self.rows = rows
         self.cols = cols
         self.filename = filename
+        self.alg = alg
+        if self.alg == 'a':
+            self.open = []
+        elif self.alg == 'bfs':
+            self.open = deque()
+        self.closed = set()
         
     #Calculates manhattan distance from node to end (h-cost)
     def calc_h(self, node):
@@ -86,7 +91,10 @@ class Astar:
     #Updates the costs and parent of an adjancent node 
     def update_node(self, adj, node):
         adj.g = (node.g + adj.cost) #Change from task 1
-        adj.h = self.calc_h(adj)
+        if self.alg == 'd':
+            adj.h = 0
+        else:
+            adj.h = self.calc_h(adj)
         adj.parent = node
         adj.f = adj.g + adj.h
         
@@ -116,6 +124,12 @@ class Astar:
         #Colors the tiles, and adds a dotted path-line from start to end
         plt.scatter([i[1] for i in path_nodes], [i[0] for i in path_nodes], color='red', s=40)
         plt.scatter([self.start.y, self.end.y], [self.start.x, self.end.x], color='green', s=40)
+        #ADDED IN 1.3
+        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        nodes_in_open = [i[1] for i in self.open]
+        plt.scatter([i.y for i in nodes_in_open], [i.x for i in nodes_in_open], marker='*', color='black', s=40)
+        plt.scatter([i.y for i in self.closed], [i.x for i in self.closed], marker='x', color='black', s=40)
+        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         plt.imshow(board, interpolation='nearest')
         plt.title(self.filename)
         plt.colorbar()
@@ -125,8 +139,12 @@ class Astar:
     def go(self):
         self.open.append((self.start.f, self.start))
         while len(self.open):
-            self.open.sort(reverse=True)
-            _, current = self.open.pop()
+
+            if self.alg == 'a' or self.alg == 'd':
+                self.open.sort(reverse=True)
+                _, current = self.open.pop()
+            elif self.alg == 'bfs':
+                _, current = self.open.popleft()
 
             self.closed.add(current)
             if (current.x,current.y) == (self.end.x, self.end.y):
@@ -146,12 +164,13 @@ class Astar:
                     else:
                         self.update_node(adj_node, current)
                         self.open.append((adj_node.f, adj_node))
-
+                        
 def shortest_path(filename):
     content, rows, cols = get_content_from_file(filename)
-    astar = Astar(content, rows, cols, (2,13), (6,12), filename = filename)
+    astar = Astar(content, rows, cols, (0,17), (9,17), filename = filename)
     astar.go()
  
 if __name__ == '__main__':
     filename = sys.argv[1]
+#    start_end_coords = [((0,17),(9,17)), ((1,2),(9,28)), ((7,2),(0,27)), ((2,13), (6,12))]
     shortest_path(filename)
