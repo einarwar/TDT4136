@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import sys, os, time
+import sys
 
 #Function that imports a textfile and finds dimensions
 def get_content_from_file(filename):
@@ -57,7 +57,7 @@ class Astar:
         self.cols = cols
         self.filename = filename
         
-    #Calculates manhattan distance from node to end
+    #Calculates manhattan distance from node to end (h-cost)
     def calc_h(self, node):
         return np.abs(node.x - self.end.x) + np.abs(node.y - self.end.y)
     
@@ -83,10 +83,9 @@ class Astar:
             nodes.append(self.get_node(node.x+1, node.y))
         return nodes
    
-   #Change this
     #Updates the costs and parent of an adjancent node 
     def update_node(self, adj, node):
-        adj.g = (node.g + adj.cost)
+        adj.g = (node.g + adj.cost) #Change from task 1
         adj.h = self.calc_h(adj)
         adj.parent = node
         adj.f = adj.g + adj.h
@@ -101,7 +100,8 @@ class Astar:
             total_cost += node.cost
             path_nodes.append((node.x, node.y))
         return path_nodes, total_cost
-    
+
+    #Smooth plot function to show board, colors are kinda bad tho
     def numpy_imshow_solved(self, path_nodes):
         i = 0
         j = 0
@@ -113,6 +113,7 @@ class Astar:
             if j == self.cols:
                 i += 1
                 j = 0
+        #Colors the tiles, and adds a dotted path-line from start to end
         plt.scatter([i[1] for i in path_nodes], [i[0] for i in path_nodes], color='red', s=40)
         plt.scatter([self.start.y, self.end.y], [self.start.x, self.end.x], color='green', s=40)
         plt.imshow(board, interpolation='nearest')
@@ -120,10 +121,8 @@ class Astar:
         plt.colorbar()
         plt.show()
 
-
+    #Mostly same as task 1
     def go(self):
-        lowest_cost = np.inf
-        best_path = None
         self.open.append((self.start.f, self.start))
         while len(self.open):
             self.open.sort(reverse=True)
@@ -133,31 +132,26 @@ class Astar:
             if (current.x,current.y) == (self.end.x, self.end.y):
                 self.end.parent = current
                 
-                temp_best_path, total_cost = self.get_path()
-                if total_cost < lowest_cost:
-                    lowest_cost = total_cost
-                    best_path = temp_best_path
-                    print 'Found a path with cost {}'.format(lowest_cost)
-                    
+                best_path, total_cost = self.get_path()
+                self.numpy_imshow_solved(best_path)
+                print 'Found a path with cost {}'.format(total_cost)
+                break
+            
             adj_nodes = self.get_adjacent_nodes(current)
             for adj_node in adj_nodes:
-                self.open.sort(reverse=True)
                 if adj_node not in self.closed:
                     if (adj_node.f, adj_node) in self.open:
-                        if adj_node.g > current.g + adj_node.cost:
+                        if adj_node.g > current.g + adj_node.cost: #Changed in task 2
                             self.update_node(adj_node, current)
                     else:
                         self.update_node(adj_node, current)
                         self.open.append((adj_node.f, adj_node))
-                        
-        self.numpy_imshow_solved(best_path)
-        print 'Total Cost = {}'.format(lowest_cost)
+
 def shortest_path(filename):
     content, rows, cols = get_content_from_file(filename)
     astar = Astar(content, rows, cols, (2,13), (6,12), filename = filename)
     astar.go()
  
-
 if __name__ == '__main__':
     filename = sys.argv[1]
     shortest_path(filename)
