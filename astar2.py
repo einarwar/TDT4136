@@ -47,7 +47,7 @@ def generate_list_of_nodes(board):
 
 #Algorithm class
 class Astar:
-    def __init__(self, board, rows, cols, start_loc, end_loc):
+    def __init__(self, board, rows, cols, start_loc, end_loc, filename):
         self.open = []
         self.closed = set()
         self.nodes = generate_list_of_nodes(board)
@@ -55,10 +55,11 @@ class Astar:
         self.end = Node(end_loc[0], end_loc[1], cost=0, terrain='End' )
         self.rows = rows
         self.cols = cols
-
+        self.filename = filename
+        
     #Calculates manhattan distance from node to end
     def calc_h(self, node):
-        return 10 * np.abs(node.x - self.end.x) + np.abs(node.y - self.end.y)
+        return np.abs(node.x - self.end.x) + np.abs(node.y - self.end.y)
     
     #Returns a node based on x,y position
     def get_node(self, x, y):
@@ -85,7 +86,7 @@ class Astar:
    #Change this
     #Updates the costs and parent of an adjancent node 
     def update_node(self, adj, node):
-        adj.g = node.g + 10 + adj.cost #Not sure about this one
+        adj.g = (node.g + adj.cost)
         adj.h = self.calc_h(adj)
         adj.parent = node
         adj.f = adj.g + adj.h
@@ -97,79 +98,66 @@ class Astar:
         total_cost = node.cost
         while node.parent is not self.start:
             node = node.parent
-            print 'Cost to walk on this {} is {}'.format(node.terrain, node.cost)
             total_cost += node.cost
             path_nodes.append((node.x, node.y))
         return path_nodes, total_cost
     
-    #Change tHis one
-    #Pretty basic function that prints the solved
-    def print_solved_path(self, path_nodes):
-        line = '_' * self.cols + '\n'
-        board = ''
-        i = 0
-        for node in self.nodes:
-            if (node.x, node.y) == (self.end.x, self.end.y):
-                line += 'E'
-            elif (node.x, node.y) in (path_nodes):
-                line += 'o'
-            elif (node.x, node.y) == (self.start.x, self.start.y):
-                line += 'S'
-            else:
-                line += '-'
-            i+=1
-            if i == self.cols:
-                i = 0
-                line += '\n'
-                board += line
-        board += '_' * self.cols + '\n'
-        print board
-        
     def numpy_imshow_solved(self, path_nodes):
+        i = 0
+        j = 0
+        board = np.zeros((self.rows, self.cols))
         for node in self.nodes:
-            pass
-        return 0    
-    
-    #Change some in this?
+            board[i,j] = node.cost
+
+            j += 1
+            if j == self.cols:
+                i += 1
+                j = 0
+        plt.scatter([i[1] for i in path_nodes], [i[0] for i in path_nodes], color='red', s=40)
+        plt.scatter([self.start.y, self.end.y], [self.start.x, self.end.x], color='green', s=40)
+        plt.imshow(board, interpolation='nearest')
+        plt.title(self.filename)
+        plt.colorbar()
+        plt.show()
+
+
     def go(self):
-        #Append start fcost and startnode to open list
+        lowest_cost = np.inf
+        best_path = None
         self.open.append((self.start.f, self.start))
-        #While we have nodes to process: add undiscovered nodes to open
         while len(self.open):
-            _, current = self.open.pop()
-            #Sort the nodes in reverse order, so we pop the one with lowest f-cost
             self.open.sort(reverse=True)
+            _, current = self.open.pop()
+
             self.closed.add(current)
-            #See if we came to the end, if we did, we are done.
             if (current.x,current.y) == (self.end.x, self.end.y):
-                print 'Found a path, exiting'
                 self.end.parent = current
-                path, total_cost = self.get_path()
-                self.print_solved_path(path)
-                print 'Total Cost is {}'.format(total_cost)
-                break
-            #Check the adjacent nodes to the one we are working on
+                
+                temp_best_path, total_cost = self.get_path()
+                if total_cost < lowest_cost:
+                    lowest_cost = total_cost
+                    best_path = temp_best_path
+                    print 'Found a path with cost {}'.format(lowest_cost)
+                    
             adj_nodes = self.get_adjacent_nodes(current)
             for adj_node in adj_nodes:
                 self.open.sort(reverse=True)
-                #If it is not unpassable, and not yet processed
                 if adj_node not in self.closed:
-
-                    #If adjacent node is in open, and its g-cost is higher than itself + 10 we need to update its value, because we found a shorter path to it now.
                     if (adj_node.f, adj_node) in self.open:
-                        if adj_node.g > current.g + 10 + adj_node.cost:
+                        if adj_node.g > current.g + adj_node.cost:
                             self.update_node(adj_node, current)
-                    #If adjacent node is not in open, we update its values, and add it to open
                     else:
                         self.update_node(adj_node, current)
                         self.open.append((adj_node.f, adj_node))
                         
-#Create Astar object and solve board
+        self.numpy_imshow_solved(best_path)
+        print 'Total Cost = {}'.format(lowest_cost)
 def shortest_path(filename):
     content, rows, cols = get_content_from_file(filename)
-    astar = Astar(content, rows, cols, (0,0), (6,6))
+    astar = Astar(content, rows, cols, (2,13), (6,12), filename = filename)
     astar.go()
-    
+ 
+
 if __name__ == '__main__':
     filename = sys.argv[1]
     shortest_path(filename)
