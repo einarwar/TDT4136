@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-from collections import deque
+from collections import deque # <- ADDED IN 1.3
 
 #Function that imports a textfile and finds dimensions
 def get_content_from_file(filename):
@@ -48,7 +48,7 @@ def generate_list_of_nodes(board):
 
 #Algorithm class
 class Astar:
-    def __init__(self, board, rows, cols, start_loc, end_loc, filename, alg='bfs'):
+    def __init__(self, board, rows, cols, start_loc, end_loc, filename, alg='bfs'): #<-- Last arg added in 1.3
         self.nodes = generate_list_of_nodes(board)
         self.start = Node(start_loc[0], start_loc[1], cost=0, terrain='Start')
         self.end = Node(end_loc[0], end_loc[1], cost=0, terrain='End' )
@@ -56,10 +56,13 @@ class Astar:
         self.cols = cols
         self.filename = filename
         self.alg = alg
+        #CHANGED IN 1.3
+        #XXXXXXXXXXXXXXXXXXXXX
         if self.alg == 'a':
             self.open = []
         elif self.alg == 'bfs':
             self.open = deque()
+        #XXXXXXXXXXXXXXXXXXXXXXXX
         self.closed = set()
         
     #Calculates manhattan distance from node to end (h-cost)
@@ -91,10 +94,13 @@ class Astar:
     #Updates the costs and parent of an adjancent node 
     def update_node(self, adj, node):
         adj.g = (node.g + adj.cost) #Change from task 1
+        #CHANGED IN 1.3
+        #XXXXXXXXXXXXXXXXXXXXXXXXXXX
         if self.alg == 'd':
             adj.h = 0
         else:
             adj.h = self.calc_h(adj)
+        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         adj.parent = node
         adj.f = adj.g + adj.h
         
@@ -140,12 +146,15 @@ class Astar:
         self.open.append((self.start.f, self.start))
         while len(self.open):
 
+            #Changed in 1.3
+            #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             if self.alg == 'a' or self.alg == 'd':
                 self.open.sort(reverse=True)
                 _, current = self.open.pop()
             elif self.alg == 'bfs':
                 _, current = self.open.popleft()
-
+            #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            
             self.closed.add(current)
             if (current.x,current.y) == (self.end.x, self.end.y):
                 self.end.parent = current
