@@ -110,8 +110,35 @@ class CSP:
         iterations of the loop.
         """
         # TODO: IMPLEMENT THIS
+
+        #Check if assignment is complete: -> check if all elements in assigment
+        # is of length 1.
+        '''
+        if assignment_is_complete(assignment):
+            return assignment
+        var = self.select_unassigned_variable(assignment)
+        # order the values in var by how few values they rule out for the others.
+        var = self.order_domain_values(var, assignment)
+        for value in var:
+            if value is consistent with assignemnt:
+                add {var = value} to assignemnt
+                inferences = self.inference(assignment, queue)
+                if inferences fail:
+                    add inferences to assignment
+                    result = self.backtrack(assignment)
+                    if result fails:
+                        return result
+            remove {var = value} and inferences from assignment
+        return False
+        '''
         pass
 
+    def assigment_is_complete(assignment):
+        for i in assignment:
+            if len(i) != 1:
+                return False
+        return True
+        
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
@@ -119,6 +146,17 @@ class CSP:
         of legal values has a length greater than one.
         """
         # TODO: IMPLEMENT THIS
+        # Chose the one that has the fewest legal actions
+        # return the key name that has the shortest list of legal actions 
+        # Special case for the first choice?
+        # Tie breaker: If we have a tie in the fewest legal actions, pick the one with the most constraints
+
+        #Pseudocode
+        #Sort the list from least elements to most
+        #If there are more than one variable with the least amount:
+        #   return the one with the longest constraint-list
+        #else:
+        #   return the variable with the least amount
         pass
 
     def inference(self, assignment, queue):
