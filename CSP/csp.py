@@ -81,9 +81,9 @@ class CSP:
         # Run AC-3 on all constraints in the CSP, to weed out all of the
         # values that are not arc-consistent to begin with
         self.inference(assignment, self.get_all_arcs())
-
+        print assignment
         # Call backtrack with the partial assignment 'assignment'
-        return self.backtrack(assignment)
+        #return self.backtrack(assignment)
 
     def backtrack(self, assignment):
         """The function 'Backtrack' from the pseudocode in the
@@ -166,7 +166,19 @@ class CSP:
         is the initial queue of arcs that should be visited.
         """
         # TODO: IMPLEMENT THIS
-        pass
+        while len(queue):
+            (i,j) = queue.pop()
+            print 'Checking arc-consistency of {} and {}'.format(i,j)            
+            if self.revise(assignment, i, j):
+                print 'Did some revising'
+                if len(assignment.domains[i]) == 0:
+                    return False
+                for k in assigment.constraints[i] - j :
+                    print 'Adding the arc ({},{}) to the queue'.format(k, i)
+                    queue.append((k,i))
+            else:
+                print 'No need to revise this'    
+        return True
 
     def revise(self, assignment, i, j):
         """The function 'Revise' from the pseudocode in the textbook.
@@ -178,7 +190,21 @@ class CSP:
         legal values in 'assignment'.
         """
         # TODO: IMPLEMENT THIS
-        pass
+        revised = False
+        toBeRemoved = []
+        for value_i in assignment[i]:
+            satisfies_constraint = False
+            for value_j in assignment[j]:
+                if (value_i, value_j) in self.constraints[i][j]:
+                    print '({},{}) exists in constraints'.format(value_i, value_j)
+                    satisfies_constraint = True
+            if not satisfies_constraint:
+                toBeRemoved.append(value_i)
+                revised = True
+        for value in toBeRemoved:
+            assignment[i].remove(value)
+        print 'Revised is {}, removed values are: {}'.format(revised, toBeRemoved)
+        return revised
 
 def create_map_coloring_csp():
     """Instantiate a CSP representing the map coloring problem from the
@@ -241,4 +267,46 @@ def print_sudoku_solution(solution):
 
 
 if __name__ == '__main__':
-    print 'hello world'
+    csp = create_map_coloring_csp()
+    #csp.inference(csp.domains, csp.get_all_arcs())
+    #csp.revise(csp.domains, 'WA', 'SA')
+    csp.backtracking_search()
+    print len(csp.constraints)
+
+
+
+
+
+
+    #    print 'Variables: {}'.format(csp.variables)
+#    print 'Domains: {}'.format(csp.domains)
+#    print 'Constraints: {}'.format(csp.constraints['WA']['SA'])
+
+
+
+
+'''
+    x = {'red', 'woff', 'hei'}
+    
+    print csp.domains['WA']
+    toBeRemoved = []
+    for value1 in csp.domains['WA']:
+        found = False
+        print 'Current value is: {}'.format(value1)
+        for value2 in x:
+            print 'Checking if ({}, {}) is in WA/SA cons'.format(value1, value2)
+            if (value1, value2) in csp.constraints['WA']['SA']:
+                print '({},{}) is a legal assignment'.format(value1, value2)
+                found = True
+        if not found:
+            print 'could not find any legal actions with {} and ({})'.format(value1, x)
+            print 'Removing value: {}'.format(value1)
+            toBeRemoved.append(value1)
+    print "To be removed: {}".format(toBeRemoved)
+    for v in toBeRemoved:
+        csp.domains['WA'].remove(v)
+    print csp.domains['WA']
+
+'''
+
+
