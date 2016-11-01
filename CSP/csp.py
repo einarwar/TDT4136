@@ -2,6 +2,7 @@
 
 import copy
 import itertools
+import sys
 
 class CSP:
     def __init__(self):
@@ -80,10 +81,12 @@ class CSP:
 
         # Run AC-3 on all constraints in the CSP, to weed out all of the
         # values that are not arc-consistent to begin with
+
         self.inference(assignment, self.get_all_arcs())
-        print assignment
+        self.backtrack(assignment)
+ 
         # Call backtrack with the partial assignment 'assignment'
-        #return self.backtrack(assignment)
+        return self.backtrack(assignment)
 
     def backtrack(self, assignment):
         """The function 'Backtrack' from the pseudocode in the
@@ -109,35 +112,23 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-        # TODO: IMPLEMENT THIS
 
-        #Check if assignment is complete: -> check if all elements in assigment
-        # is of length 1.
-        '''
-        if assignment_is_complete(assignment):
+
+        if all(lengths is 1 for lengths in [len(values) for values in assignment.values()]):
             return assignment
         var = self.select_unassigned_variable(assignment)
-        # order the values in var by how few values they rule out for the others.
-        var = self.order_domain_values(var, assignment)
-        for value in var:
-            if value is consistent with assignemnt:
-                add {var = value} to assignemnt
-                inferences = self.inference(assignment, queue)
-                if inferences fail:
-                    add inferences to assignment
-                    result = self.backtrack(assignment)
-                    if result fails:
-                        return result
-            remove {var = value} and inferences from assignment
-        return False
-        '''
-        pass
 
-    def assigment_is_complete(assignment):
-        for i in assignment:
-            if len(i) != 1:
-                return False
-        return True
+        for value in assignment[var]: #Add a sorting function here
+
+            if value in assignment[var]:
+                assignment[var] = value
+                if self.inference(assignment, self.get_all_arcs()):
+                    if self.backtrack(assignment):
+                        print 'Found a solution'
+                        return True
+            assignment = copy.deepcopy(assignment)
+        print 'Could not find a solution'
+        return False
         
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
@@ -145,39 +136,43 @@ class CSP:
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
-        # TODO: IMPLEMENT THIS
-        # Chose the one that has the fewest legal actions
-        # return the key name that has the shortest list of legal actions 
-        # Special case for the first choice?
-        # Tie breaker: If we have a tie in the fewest legal actions, pick the one with the most constraints
+        sorted_keys = []
+        for k in sorted(assignment, key=lambda k: len(assignment[k])):
+            sorted_keys.append((k, len(assignment[k])))
 
-        #Pseudocode
-        #Sort the list from least elements to most
-        #If there are more than one variable with the least amount:
-        #   return the one with the longest constraint-list
-        #else:
-        #   return the variable with the least amount
-        pass
-
+        list_of_duplicates = [item for item in sorted_keys if sorted_keys[0][1] in item]
+        
+        if len(list_of_duplicates) > 1:
+            y = sorted([(var,len(self.constraints[var])) for var in self.constraints], key=lambda k: k[1], reverse=True)
+            var = y[0][0]
+        else:
+            var = sorted_keys[0][0]
+        return var
+        
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
         the lists of legal values for each undecided variable. 'queue'
         is the initial queue of arcs that should be visited.
         """
-        # TODO: IMPLEMENT THIS
+
         while len(queue):
             (i,j) = queue.pop()
-            print 'Checking arc-consistency of {} and {}'.format(i,j)            
             if self.revise(assignment, i, j):
-                print 'Did some revising'
-                if len(assignment.domains[i]) == 0:
+                if len(assignment[i]) == 0:
                     return False
-                for k in assigment.constraints[i] - j :
-                    print 'Adding the arc ({},{}) to the queue'.format(k, i)
-                    queue.append((k,i))
-            else:
-                print 'No need to revise this'    
+                neighbors =  self.get_all_neighboring_arcs(i)
+                neighbors.remove((j,i))
+#                if (i,j) in neighbors:
+#                    print 'removing ({},{}) from list'.format(i,j)
+##                    neighbors.remove((i,j))
+##                if (j,i) in neighbors:
+#                    print 'removing ({},{}) from list'.format(j,i)
+#                    neighbors.remove((j,i))
+                    
+                for k in neighbors:
+                    queue.append(k)
+
         return True
 
     def revise(self, assignment, i, j):
@@ -189,21 +184,18 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
-        # TODO: IMPLEMENT THIS
         revised = False
         toBeRemoved = []
         for value_i in assignment[i]:
             satisfies_constraint = False
             for value_j in assignment[j]:
                 if (value_i, value_j) in self.constraints[i][j]:
-                    print '({},{}) exists in constraints'.format(value_i, value_j)
                     satisfies_constraint = True
             if not satisfies_constraint:
                 toBeRemoved.append(value_i)
                 revised = True
         for value in toBeRemoved:
             assignment[i].remove(value)
-        print 'Revised is {}, removed values are: {}'.format(revised, toBeRemoved)
         return revised
 
 def create_map_coloring_csp():
@@ -267,46 +259,10 @@ def print_sudoku_solution(solution):
 
 
 if __name__ == '__main__':
-    csp = create_map_coloring_csp()
-    #csp.inference(csp.domains, csp.get_all_arcs())
-    #csp.revise(csp.domains, 'WA', 'SA')
-    csp.backtracking_search()
-    print len(csp.constraints)
+   # csp = create_map_coloring_csp()
+    csp = create_sudoku_csp(sys.argv[1])
+    solution = csp.backtracking_search()
+    print_sudoku_solution(solution)
 
-
-
-
-
-
-    #    print 'Variables: {}'.format(csp.variables)
-#    print 'Domains: {}'.format(csp.domains)
-#    print 'Constraints: {}'.format(csp.constraints['WA']['SA'])
-
-
-
-
-'''
-    x = {'red', 'woff', 'hei'}
-    
-    print csp.domains['WA']
-    toBeRemoved = []
-    for value1 in csp.domains['WA']:
-        found = False
-        print 'Current value is: {}'.format(value1)
-        for value2 in x:
-            print 'Checking if ({}, {}) is in WA/SA cons'.format(value1, value2)
-            if (value1, value2) in csp.constraints['WA']['SA']:
-                print '({},{}) is a legal assignment'.format(value1, value2)
-                found = True
-        if not found:
-            print 'could not find any legal actions with {} and ({})'.format(value1, x)
-            print 'Removing value: {}'.format(value1)
-            toBeRemoved.append(value1)
-    print "To be removed: {}".format(toBeRemoved)
-    for v in toBeRemoved:
-        csp.domains['WA'].remove(v)
-    print csp.domains['WA']
-
-'''
 
 
