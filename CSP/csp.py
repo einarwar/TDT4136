@@ -111,23 +111,24 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-
-        original_assignment = copy.deepcopy(assignment)
+        
+        
         if all(lengths is 1 for lengths in [len(values) for values in assignment.values()]):
             return assignment
         var = self.select_unassigned_variable(assignment)
 
         for value in assignment[var]: #Add a sorting function here
-            assignment = copy.deepcopy(original_assignment)
-            if value in assignment[var]:
-                assignment[var] = value
-                if self.inference(assignment, self.get_all_arcs()):
-                    if self.backtrack(assignment):
+            temp_assignment = copy.deepcopy(assignment)
+            if value in temp_assignment[var]:
+                temp_assignment[var] = [value]
+                if self.inference(temp_assignment, self.get_all_neighboring_arcs(var)):
+                    result = self.backtrack(temp_assignment)
+                    if result != None:
                         print 'Found a solution'
-                        return assignment
+                        return result
 
         print 'Could not find a solution'
-        return False
+        return None
 
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
@@ -160,6 +161,7 @@ class CSP:
             if self.revise(assignment, i, j):
                 if len(assignment[i]) == 0:
                     return False
+                
                 neighbors =  self.get_all_neighboring_arcs(i)
 #                neighbors.remove((j,i))
                 if (i,j) in neighbors:
@@ -169,7 +171,8 @@ class CSP:
 
                 for k in neighbors:
                     queue.append(k)
-
+                
+    
         return True
 
     def revise(self, assignment, i, j):
