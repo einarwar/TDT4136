@@ -83,8 +83,7 @@ class CSP:
         # values that are not arc-consistent to begin with
 
         self.inference(assignment, self.get_all_arcs())
-        self.backtrack(assignment)
- 
+
         # Call backtrack with the partial assignment 'assignment'
         return self.backtrack(assignment)
 
@@ -113,23 +112,23 @@ class CSP:
         iterations of the loop.
         """
 
-
+        original_assignment = copy.deepcopy(assignment)
         if all(lengths is 1 for lengths in [len(values) for values in assignment.values()]):
             return assignment
         var = self.select_unassigned_variable(assignment)
 
         for value in assignment[var]: #Add a sorting function here
-
+            assignment = copy.deepcopy(original_assignment)
             if value in assignment[var]:
                 assignment[var] = value
                 if self.inference(assignment, self.get_all_arcs()):
                     if self.backtrack(assignment):
                         print 'Found a solution'
-                        return True
-            assignment = copy.deepcopy(assignment)
+                        return assignment
+
         print 'Could not find a solution'
         return False
-        
+
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
@@ -141,14 +140,14 @@ class CSP:
             sorted_keys.append((k, len(assignment[k])))
 
         list_of_duplicates = [item for item in sorted_keys if sorted_keys[0][1] in item]
-        
+
         if len(list_of_duplicates) > 1:
             y = sorted([(var,len(self.constraints[var])) for var in self.constraints], key=lambda k: k[1], reverse=True)
             var = y[0][0]
         else:
             var = sorted_keys[0][0]
         return var
-        
+
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
@@ -162,14 +161,12 @@ class CSP:
                 if len(assignment[i]) == 0:
                     return False
                 neighbors =  self.get_all_neighboring_arcs(i)
-                neighbors.remove((j,i))
-#                if (i,j) in neighbors:
-#                    print 'removing ({},{}) from list'.format(i,j)
-##                    neighbors.remove((i,j))
-##                if (j,i) in neighbors:
-#                    print 'removing ({},{}) from list'.format(j,i)
-#                    neighbors.remove((j,i))
-                    
+#                neighbors.remove((j,i))
+                if (i,j) in neighbors:
+                    neighbors.remove((i,j))
+                if (j,i) in neighbors:
+                    neighbors.remove((j,i))
+
                 for k in neighbors:
                     queue.append(k)
 
@@ -263,6 +260,3 @@ if __name__ == '__main__':
     csp = create_sudoku_csp(sys.argv[1])
     solution = csp.backtracking_search()
     print_sudoku_solution(solution)
-
-
-
